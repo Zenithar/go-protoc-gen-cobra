@@ -1,0 +1,59 @@
+{{ define "Service" }}{{ $serviceName := .Name }}{{ $serviceUseName := .UseName }}
+
+var {{.Name}}ClientCommand = &cobra.Command{
+	Use: "{{.UseName}}",
+}
+
+{{ range .Methods -}}
+
+var {{$serviceUseName}}_{{.Name}}ClientCommand = &cobra.Command{
+	Use: "{{.UseName}}",
+	Long: "{{.Name}} client\n\nYou can use environment variables with the same name of the command flags.\nAll caps and s/-/_, e.g. SERVER_ADDR.",
+	Example: `
+Save a sample request to a file (or refer to your protobuf descriptor to create one):
+	{{.UseName}} -p > req.json
+Submit request using file:
+	{{.UseName}} -f req.json
+Authenticate using the Authorization header (requires transport security):
+	export AUTH_TOKEN=your_access_token
+	export SERVER_ADDR=api.example.com:443
+	echo '{json}' | {{.UseName}} --tls`,
+	Run: func(cmd *cobra.Command, args []string) {
+    var req {{ .Input }}
+
+    // Get a connection
+    conn, err := dial(ClientCommandConfig)
+	  if err != nil {
+		  return err
+	  }
+	  defer conn.Close()
+
+    // Initialize client wrapper
+    client := New{{$serviceName}}Client(conn)
+
+    // Unmarshal request
+    if err := jsonpb.Unmarshal(bufio.NewReader(os.Stdin), req); err != nil {
+      return err
+    }
+
+    // Prepare context
+    ctx := context.Background()
+
+    // Do the call
+    res, err := client.{{.Name}}(ctx, req)
+    if err != nil {
+      return err
+    }
+
+    // Return result
+    beautify(res)
+  },
+}
+
+func init() {
+	{{$serviceName}}ClientCommand.AddCommand({{$serviceUseName}}_{{.Name}}ClientCommand)
+	DefaultClientCommandConfig.AddFlags({{$serviceUseName}}_{{.Name}}ClientCommand.Flags())
+}
+{{end}}
+
+{{ end }}
