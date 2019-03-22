@@ -18,18 +18,18 @@ Authenticate using the Authorization header (requires transport security):
 	export AUTH_TOKEN=your_access_token
 	export SERVER_ADDR=api.example.com:443
 	echo '{json}' | {{.UseName}} --tls`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
     var req {{ .Input }}
 
     // Get a connection
-    conn, err := dial(ClientCommandConfig)
+    conn, err := dial(DefaultClientCommandConfig)
 	  if err != nil {
 		  return err
 	  }
 	  defer conn.Close()
 
     // Initialize client wrapper
-    client := New{{$serviceName}}Client(conn)
+    grpcClient := New{{$serviceName}}Client(conn)
 
     // Unmarshal request
     if err := jsonpb.Unmarshal(bufio.NewReader(os.Stdin), req); err != nil {
@@ -40,13 +40,16 @@ Authenticate using the Authorization header (requires transport security):
     ctx := context.Background()
 
     // Do the call
-    res, err := client.{{.Name}}(ctx, req)
+    res, err := grpcClient.{{.Name}}(ctx, req)
     if err != nil {
       return err
     }
 
-    // Return result
+    // Beautify result
     beautify(res)
+
+    // no error
+    return nil
   },
 }
 

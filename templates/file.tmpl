@@ -17,16 +17,16 @@ import (
     "path/filepath"
     "time"
 
-    "github.com/golang/protobuf/jsonpb"
-    prettyjson "github.com/hokaccha/go-prettyjson"
-    "github.com/kelseyhightower/envconfig"
-    "github.com/spf13/cobra"
-    "github.com/spf13/pflag"
-    "golang.org/x/oauth2"
-    "google.golang.org/grpc/codes"
-    "google.golang.org/grpc/status"
-    "google.golang.org/grpc/credentials"
-    "google.golang.org/grpc/credentials/oauth"
+		proto "github.com/golang/protobuf/proto"
+		"github.com/golang/protobuf/jsonpb"
+		prettyjson "github.com/hokaccha/go-prettyjson"
+		"github.com/kelseyhightower/envconfig"
+		"github.com/spf13/cobra"
+		"github.com/spf13/pflag"
+		"golang.org/x/oauth2"
+		grpc "google.golang.org/grpc"
+		"google.golang.org/grpc/credentials"
+		"google.golang.org/grpc/credentials/oauth"
 
     {{ range .Imports }}
     {{ .Key }} "{{ .Value }}"
@@ -95,7 +95,7 @@ func dial(cfg *ClientCommandConfig) (*grpc.ClientConn, error) {
 		if cfg.CACertFile != "" {
 			cacert, err := ioutil.ReadFile(cfg.CACertFile)
 			if err != nil {
-				return nil, nil, fmt.Errorf("ca cert: %v", err)
+				return nil, fmt.Errorf("ca cert: %v", err)
 			}
 			certpool := x509.NewCertPool()
 			certpool.AppendCertsFromPEM(cacert)
@@ -105,11 +105,11 @@ func dial(cfg *ClientCommandConfig) (*grpc.ClientConn, error) {
     // Client certificate given 
 		if cfg.CertFile != "" {
 			if cfg.KeyFile == "" {
-				return nil, nil, fmt.Errorf("missing key file")
+				return nil, fmt.Errorf("missing key file")
 			}
 			pair, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 			if err != nil {
-				return nil, nil, fmt.Errorf("cert/key: %v", err)
+				return nil, fmt.Errorf("cert/key: %v", err)
 			}
 			tlsConfig.Certificates = []tls.Certificate{pair}
 		}
@@ -160,7 +160,7 @@ func dial(cfg *ClientCommandConfig) (*grpc.ClientConn, error) {
   // Real dial connection
   conn, err := grpc.Dial(cfg.ServerAddr, opts...)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	return conn, nil
