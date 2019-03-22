@@ -32,7 +32,7 @@ Authenticate using the Authorization header (requires transport security):
     grpcClient := New{{$serviceName}}Client(conn)
 
     // Unmarshal request
-    if err := jsonpb.Unmarshal(bufio.NewReader(os.Stdin), req); err != nil {
+    if err := jsonpb.Unmarshal(bufio.NewReader(os.Stdin), &req); err != nil {
       return err
     }
 
@@ -40,7 +40,7 @@ Authenticate using the Authorization header (requires transport security):
     ctx := context.Background()
 
     // Do the call
-    res, err := grpcClient.{{.Name}}(ctx, req)
+    res, err := grpcClient.{{.Name}}(ctx, &req)
     if err != nil {
       return err
     }

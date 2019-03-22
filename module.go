@@ -31,17 +31,17 @@ func (m *cobraGen) Execute(targets map[string]pgs.File, packages map[string]pgs.
 
 		for _, service := range file.Services() {
 			sm := serviceModel{
-				Name:    service.Name().String(),
+				Name:     service.Name().String(),
 				FullName: service.Name().UpperCamelCase().String(),
-				UseName: service.Name().LowerCamelCase().String(),
+				UseName:  service.Name().LowerCamelCase().String(),
 			}
 
 			for _, method := range service.Methods() {
 				mb := methodModel{
-					Name:   m.Context.Name(method).String(),
+					Name:    m.Context.Name(method).String(),
 					UseName: m.Context.Name(method).LowerCamelCase().String(),
-					Input:  "*" + m.Context.Name(method.Input()).String(),
-					Output: "*" + m.Context.Name(method.Output()).String(),
+					Input:   m.Context.Name(method.Input()).String(),
+					Output:  m.Context.Name(method.Output()).String(),
 				}
 
 				if !method.Input().BuildTarget() {
@@ -50,7 +50,7 @@ func (m *cobraGen) Execute(targets map[string]pgs.File, packages map[string]pgs.
 						Value: path,
 					}
 
-					mb.Input = "*" + m.Context.PackageName(method.Input()).String() + "." + m.Context.Name(method.Input()).String()
+					mb.Input = m.Context.PackageName(method.Input()).String() + "." + m.Context.Name(method.Input()).String()
 				}
 
 				if !method.Output().BuildTarget() {
@@ -59,7 +59,7 @@ func (m *cobraGen) Execute(targets map[string]pgs.File, packages map[string]pgs.
 						Value: path,
 					}
 
-					mb.Output = "*" + m.Context.PackageName(method.Output()).String() + "." + m.Context.Name(method.Output()).String()
+					mb.Output = m.Context.PackageName(method.Output()).String() + "." + m.Context.Name(method.Output()).String()
 				}
 
 				sm.Methods = append(sm.Methods, mb)
@@ -95,17 +95,17 @@ type fileModel struct {
 }
 
 type serviceModel struct {
-	Name    string
+	Name     string
 	FullName string
-	UseName string
-	Methods []methodModel
+	UseName  string
+	Methods  []methodModel
 }
 
 type methodModel struct {
-	Name   string
+	Name    string
 	UseName string
-	Input  string
-	Output string
+	Input   string
+	Output  string
 }
 
 type importModel struct {
