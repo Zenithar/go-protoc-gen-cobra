@@ -4,28 +4,28 @@ package example
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net"
-	"path/filepath"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	proto "github.com/golang/protobuf/proto"
 	prettyjson "github.com/hokaccha/go-prettyjson"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"golang.org/x/oauth2"
-	"google.golang.org/grpc/codes"
+	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/oauth"
-	"google.golang.org/grpc/status"
 )
 
 // -----------------------------------------------------------------------------
@@ -90,7 +90,7 @@ func dial(cfg *ClientCommandConfig) (*grpc.ClientConn, error) {
 		if cfg.CACertFile != "" {
 			cacert, err := ioutil.ReadFile(cfg.CACertFile)
 			if err != nil {
-				return nil, nil, fmt.Errorf("ca cert: %v", err)
+				return nil, fmt.Errorf("ca cert: %v", err)
 			}
 			certpool := x509.NewCertPool()
 			certpool.AppendCertsFromPEM(cacert)
@@ -100,11 +100,11 @@ func dial(cfg *ClientCommandConfig) (*grpc.ClientConn, error) {
 		// Client certificate given
 		if cfg.CertFile != "" {
 			if cfg.KeyFile == "" {
-				return nil, nil, fmt.Errorf("missing key file")
+				return nil, fmt.Errorf("missing key file")
 			}
 			pair, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 			if err != nil {
-				return nil, nil, fmt.Errorf("cert/key: %v", err)
+				return nil, fmt.Errorf("cert/key: %v", err)
 			}
 			tlsConfig.Certificates = []tls.Certificate{pair}
 		}
@@ -155,7 +155,7 @@ func dial(cfg *ClientCommandConfig) (*grpc.ClientConn, error) {
 	// Real dial connection
 	conn, err := grpc.Dial(cfg.ServerAddr, opts...)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	return conn, nil
@@ -212,21 +212,21 @@ Authenticate using the Authorization header (requires transport security):
 	export AUTH_TOKEN=your_access_token
 	export SERVER_ADDR=api.example.com:443
 	echo '{json}' | echo --tls`,
-	Run: func(cmd *cobra.Command, args []string) {
-		var req *EchoRequest
+	RunE: func(cmd *cobra.Command, args []string) error {
+		var req EchoRequest
 
 		// Get a connection
-		conn, err := dial(ClientCommandConfig)
+		conn, err := dial(DefaultClientCommandConfig)
 		if err != nil {
 			return err
 		}
 		defer conn.Close()
 
 		// Initialize client wrapper
-		client := NewEchoServiceClient(conn)
+		grpcClient := NewEchoServiceClient(conn)
 
 		// Unmarshal request
-		if err := jsonpb.Unmarshal(bufio.NewReader(os.Stdin), req); err != nil {
+		if err := jsonpb.Unmarshal(bufio.NewReader(os.Stdin), &req); err != nil {
 			return err
 		}
 
@@ -234,13 +234,16 @@ Authenticate using the Authorization header (requires transport security):
 		ctx := context.Background()
 
 		// Do the call
-		res, err := client.Echo(ctx, req)
+		res, err := grpcClient.Echo(ctx, &req)
 		if err != nil {
 			return err
 		}
 
-		// Return result
+		// Beautify result
 		beautify(res)
+
+		// no error
+		return nil
 	},
 }
 
